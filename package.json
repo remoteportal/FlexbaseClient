@@ -1,0 +1,17 @@
+{
+  "name": "fbc",
+  "version": "1.0.0",
+  "description": "Facebook Client",
+  "main": "fbc.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "coffeescript": "^2.3.0"
+  },
+  "dependencies": {
+    "ws": "^5.1.1"
+  }
+}

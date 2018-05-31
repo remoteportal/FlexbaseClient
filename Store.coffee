@@ -1,3 +1,33 @@
+###
+Store - multi-threaded safe filesystem read and writes
+
+
+EXTENDS: Base
+
+
+DESCRIPTION
+
+
+FEATURES
+-
+
+
+TODOs
+- UTRun isn't stack
+- non-standard factory pattern
+
+
+KNOWN BUGS:
+-
+###
+
+
+
+
+
+
+
+
 #if node
 fs = require 'fs'
 path = require 'path'
@@ -19,9 +49,9 @@ class StoreUT extends UT
 		super "StoreUT"
 
 	run: ->
-		@a "HELP", (ut) ->
-			store = factory "/tmp/StoreUT"
-			ut.resolve()
+#		@a "HELP", (ut) ->
+#			store = factory "/tmp/StoreUT"
+#			ut.resolve()
 
 		@a "concurrent writes", (ut) ->
 #			@log "****777** hello: #{@peter}"
@@ -79,7 +109,20 @@ class Store extends Base
 		@log "DESTROY"
 
 
-	init: -> util.fs_directoryEnsurePromise @directory
+	init: ->
+#		@log "init: directory=#{@directory}"
+		util.fs_directoryEnsurePromise @directory
+#	init: ->
+#		new Promise (resolve, reject) =>
+#			@log "init: directory=#{@directory}"
+#			util.fs_directoryEnsurePromise @directory
+#			.then =>
+#				@log "directory ensured"
+#				resolve()
+#			.catch (ex) =>
+#				@logCatch "blah", ex
+#				reject ex
+#		666;
 
 
 	json: (substitute) -> path.join @directory, "#{substitute}.json"
@@ -126,7 +169,8 @@ class Store extends Base
 						meta.readList.length = 0
 
 					if err
-						@logWarning "readFile", err
+						if err.code isnt "ENOENT"
+							@logError "readFile", err, true
 						notify "reject", data
 						reject err
 					else

@@ -3,6 +3,12 @@ var trace;
 
 trace = require('./trace');
 
+if (!Array.isArray) {
+  Array.isArray = function(arg) {
+    return Object.prototype.toString.call(arg) === '[object Array]';
+  };
+}
+
 module.exports = {
   arraysEqual: function(a, b) {
     var i;
@@ -15,8 +21,7 @@ module.exports = {
     if (a.length !== b.length) {
       return false;
     }
-    // If you don't care about the order of the elements inside
-    // the array, you should sort both arrays here.
+    //TODO: If you care about the order of the elements inside the array, you should sort both arrays here.
     i = 0;
     while (i < a.length) {
       if (a[i] !== b[i]) {

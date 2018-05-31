@@ -1,15 +1,13 @@
 trace = require './trace'
 
+
+
+# PROJECT AGNOSTIC!!!
+
+
+
+
 module.exports =
-
-
-
-	#VARIABLES
-#	eD = document.documentElement
-
-
-
-	#INTERFACE
 #	ASCIIHEX: (n) ->
 ##if n <= -3 or n >= 18
 ##	throw n
@@ -24,6 +22,13 @@ module.exports =
 	CONSTRAIN: (min, n, max) -> Math.max min, Math.min(n, max)
 
 
+	GUIDNew: ->		# uuidv4
+		'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace /[xy]/g, (c) ->
+			r = Math.random() * 16 | 0
+			v = if c == 'x' then r else r & 0x3 | 0x8
+			v.toString 16
+
+			
 	PLURAL: (n) -> if n is 0 or n >= 2 then "s" else ""
 
 
@@ -38,21 +43,6 @@ module.exports =
 			max = min
 			min = 0
 		Math.floor Math.random() * (max-min+1) + min
-
-
-#	SCROLL_LEFT: (n) ->
-#		if n?
-#			eD.scrollLeft = n
-#		else
-#			(window.pageXOffset || eD.scrollLeft) - (eD.clientLeft || 0)
-#
-#
-#	SCROLL_TOP: (n) ->
-#		if n?
-#			eD.scrollTop = n
-#			return
-#		else
-#			return (window.pageYOffset || eD.scrollTop) - (eD.clientTop || 0)
 
 
 	SIGN: (n) ->

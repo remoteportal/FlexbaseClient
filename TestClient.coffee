@@ -1,6 +1,6 @@
 #if NODE
 Base = require './Base'
-FBClientNode = require './FBClientNode'
+ClientFB = require './ClientFB'
 trace = require './trace'
 util = require './Util'
 #endif
@@ -12,11 +12,10 @@ class TestClient extends Base
 
 	#TODO: deprecate necessity to call start()... it's just an extra step I'll forget to do
 	start: ->
-		@log "START #{@testHub.URLGet()}"															if trace.TEST_CLIENT
+		@log "START #{@testHub.URLGet()}"															if trace.TEST_CLIENT or 1
 
-		@client = new FBClientNode @testHub.c, "/tmp/ut/TestClient"
+		@client = new ClientFB @testHub.c, "/tmp/ut/TestClient"
 
-#		@log "[#{attemptCnt}] attempting to connect to WebSocket #{URL}"
 		@client.start @testHub.URLGet()
 
 module.exports = TestClient

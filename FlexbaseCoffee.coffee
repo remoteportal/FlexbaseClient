@@ -176,7 +176,7 @@ send = (cmd, po) ->
 				_[pn] = pv
 
 			sendMap[guid] = _
-			logBase "Flexbase", "send", _					#HERE TRACE
+			logBase "Flexbase", "send", _
 			flexbase.ws.send JSON.stringify _
 		else
 			console.log "send:OFFLINE"
@@ -285,35 +285,7 @@ positive = (o) ->
 	out
 
 
-#TODO: move
-GUID = ->		# uuidv4
-	'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace /[xy]/g, (c) ->
-		r = Math.random() * 16 | 0
-		v = if c == 'x' then r else r & 0x3 | 0x8
-		v.toString 16
-# console.log uuidv4()
 
-
-if !Array.isArray
-	Array.isArray = (arg) -> Object::toString.call(arg) is '[object Array]'
-
-
-
-## config ## MUST BE PRIVATE INSIDE Flexbase
-config =
-	saveList: []
-	upList: []
-	proxyMap: Object.create null
-	targetMap: Object.create null
-	newID: -1
-	procID: 0
-	rootID: 0
-	transaction: null
-#	affectedMap: new Map()
-	bOpen: false
-	GUID: GUID()
-	outQ: []
-	transactionList: []
 
 
 notifyList = []
@@ -356,7 +328,7 @@ setInterval (->
 			invoke.reject Object.assign invoke,
 				dur: _
 				error: "TIMEOUT"
-#			O.DUMP invoke
+#			O.LOG invoke
 			invoke = null
 ), 5000
 
@@ -447,21 +419,6 @@ flexbase =
 				reject ex
 
 
-	configWrite: ->
-#		@log "configWrite", config
-		o = {}
-		for pn,pv of config
-#			@log "**** #{pn}"
-##			unless pn in ["proxyMap","targetMap","newID","procID","rootID","transaction","bOpen","transactionList","outQ"]
-			if pn in ["username","password","rootID"]
-				o[pn] = pv
-##			else if pn is "proxyMap"
-##				proxyMap = Object.create null
-##				for __id of pv
-##					proxyMap["HELP"] = 0
-#		@log "configWrite2", o
-		Expo.FileSystem.writeAsStringAsync @path("config"), JSON.stringify o
-
 	create: (o) ->
 		# @log "create", o
 
@@ -530,8 +487,6 @@ flexbase =
 					#TODO: o.__id = __id
 					reject ex
 
-	GUID: GUID
-
 	loggedOn: (config) ->
 		new Promise (resolve, reject) =>
 #			@log "loggedOn", config
@@ -562,7 +517,7 @@ flexbase =
 #				@log "init: json=#{json}"
 				_ = JSON.parse json
 				@log "initializing config.json"
-				O.DUMP _
+				O.LOG _
 #				@log "----------"
 				if _.__id > 0
 					@loggedOn(_).then (root) =>
@@ -600,7 +555,7 @@ flexbase =
 ##				@log "init: json=#{json}"
 #				_ = JSON.parse json
 #				@log "init"
-#				O.DUMP _
+#				O.LOG _
 ##				@log "----------"
 #				@loggedOn(_).then (root) =>
 ##						@log "GOT BBB: root=", root
@@ -694,7 +649,6 @@ flexbase =
 						bConnected = true
 						bNoConnectionDisplayed = false
 						attemptCnt = 0
-
 						@mOnline = 2
 
 
@@ -931,7 +885,6 @@ flexbase =
 						#TODO: look in config.targetMap
 						stripped = strip this
 
-						#HERE
 						# snapshot = Object.assign {}, stripped.... ==> json *is* the snapshot
 						json = JSON.stringify stripped
 
@@ -1201,7 +1154,7 @@ flexbase =
 			sendMap = {}
 			@ws = null
 
-FB = flexbase	#TRY
+FB = flexbase
 
 #if 0
 #	try

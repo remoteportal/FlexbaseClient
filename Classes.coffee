@@ -1,9 +1,9 @@
-peter = 3
-
 #if node
 WebSocket = require 'ws'
 
 A = require './A'
+API = require './API'
+#ClientFB = require './ClientFB'		#H: why isn't this bold?  The IDE knows something I don't!  SOLN: require it inline, below
 Base = require './Base'
 O = require './O'
 trace = require './trace'
@@ -48,11 +48,163 @@ util = require './Util'
 
 # ########################################## FLEXBASE ##########################################
 module.exports =
+	"UT.Peter":
+		meta:
+			comment: "not sure where to put this class or unit test"
+		version0:
+			NODE_CLIENT:
+				p:
+					color:
+						cn: "string"
+				m:
+					cap: (s) ->
+						if s.length
+							s.charAt(0).toUpperCase() + s.slice(1)
+						else
+							""
+				ut: (@testHub) ->	#COL17
+					@a "utPete", (ut) ->
+						@log "client rain today"
+						ut.resolve()
+					@A "simple RPC", (ut) ->
+						cleanUp = =>
+							@log "cleanUp"
+							@testEnv?.destroy()
+							@client.listen false
+						@testHub.serverFresh()
+						.then (@testEnv) =>
+							ClientFB = require './ClientFB'
+							@client = new ClientFB "ws://localhost:#{@testEnv.port}", @testEnv.clientDirectory
+							@client.listen true
+						.then =>
+							#HERE
+							@client.create "UT.Peter"
+						.then (fo) =>
+#							@log "after create", fo
+							@eq fo.cap("fred"), "Fred"
+							@log "calling..."
+							fo.reverse "Hello"
+						.then (reversed) =>
+							@log "reversed: #{reversed}"
+							if 1
+								cleanUp()
+								ut.resolve()
+						.catch (ex) =>
+							@logCatch "simple RPC", ex
+							cleanUp()
+							ut.reject ex
+			NODE_SERVER:
+				p:
+					serverInfo:
+						IP: "127.0.0.0"
+				ut: (@testHub) ->	#COL17
+					@a "utPete", (ut) ->
+						@log "server rain today"
+						ut.resolve()
+			NODE_SERVER_RPC:
+				m:
+					reverse: (s) ->
+						new Promise (ff, rj) =>
+							@log "reverse: #{s}!!!"
+							ff s.split("").reverse().join ""
+
+
+	#H: does this object need to save any data at all?  If not, just create singleton on the fly each time!
+	"Flexbase.Authenticate":
+		meta:
+			bSingleton: true
+		version0:
+			NODE_CLIENT:
+				ut: (@testHub) ->	#COL17
+					@a "register", (ut) ->
+						cleanUp = =>
+							#TODO: return Promise
+							@log "cleanUp"
+							@testEnv?.destroy()
+							@client.listen false
+
+						@testHub.serverFresh()
+						.then (@testEnv) =>
+#							O.LOG @testEnv
+							
+#							@log "testEnv: #{@testEnv.infoFN()}"
+							ClientFB = require './ClientFB'
+							@client = new ClientFB "ws://localhost:#{@testEnv.port}", @testEnv.clientDirectory
+							@client.listen true
+#						.then =>
+#							@log "both listening", @client.config
+						.then =>
+							@client.config.authenticateID = 55
+							@client.configWrite()
+						.then =>
+							#HERE
+							@client.createSingletonByClass "Flexbase.Authenticate"
+							.then (auth) =>
+								@log "call emailHold"
+								auth.emailHold "peter@domain.com"
+							.catch (ex) =>
+								@logCatch "cr auth", ex
+						.then =>
+							@log "done", "and again done"
+							if 1
+								cleanUp()
+								ut.resolve()
+
+#							@log "xxx", @client, true
+#							@log @client.dateCur()
+#						.then =>
+#							ut.resolve()
+#						.then =>
+#							@log "call"
+##							@client.createSingletonByClass "Flexbase.Authenticate"
+#						.then (fo) =>
+#							@log "read", fo
+#							ut.resolve()
+						.catch (ex) =>
+							@logCatch "register chain", ex
+#							@testEnv?.destroy()
+							cleanUp()
+							ut.reject ex
+			NODE_SERVER_RPC:
+				m:
+					emailHold: (email) ->
+						@log "emailHold: #{email}"
+
+#						new Promise (resolve, reject) =>
+#							c = API.apiFactory()		#DEPRECATED
+#							c.query "call emailHold(?)", [email]
+#							.then (rsets) =>
+#								@log "then", rsets
+#								c.d()
+#								resolve 1 * rsets[0][0].emailHoldID
+#							.catch (ex) =>
+#								@logFatal "query", "ex="+ex
+#								c.d()
+#								reject err
+			NODE_SERVER:
+				ut: (@testHub) ->	#COL17
+					@_a "NOT HERE", (ut) ->
+#						@testHub.serverFresh()
+#						.then =>
+#							ClientFB = require './ClientFB'
+#							@client = new ClientFB @testHub.c, "/tmp/ut/register"
+##							@client.start null
+#						.then =>
+#							@log "call"
+##							@client.createSingletonByClass "Flexbase.Authenticate"
+#						.then (fo) =>
+#							@log "read", fo
+#							ut.resolve()
+#						.catch (ex) =>
+#							ut.reject ex
+
+
+
 	"Flexbase.Singleton_HELP":
 		meta:
 			bSingleton: true
 		version0:
-			NODE_LOCAL:
+			NODE_CLIENT:
 				p:
 					color:
 						cn: "string"
@@ -76,7 +228,7 @@ module.exports =
 						cn: "Array"
 						itemCn: "Flexbase.Object.HELP"
 						required: true
-			NODE_LOCAL:
+			NODE_CLIENT:
 				m:
 					commit: ->
 						@log "commit"
@@ -126,31 +278,75 @@ module.exports =
 					commit: ->
 						@log "commit"
 				ut: (@testHub) ->	#COL17
-					@a "process commit", (ut) ->
-						commit = ->
-							idx = 0
-							loop
-								op = opList[idx]
-								fb.get op.__id
-								.then (o) =>
-									if o.bLocked
-										# allowed to steal away from lower-priority grabbers if not started yet
-									else
-										o.bLocked = true
+#					@a "process commit", (ut) ->
+#						commit = ->
+#							idx = 0
+#							loop
+#								op = opList[idx]
+#								fb.get op.__id
+#								.then (o) =>
+#									if o.bLocked
+#										# allowed to steal away from lower-priority grabbers if not started yet
+#									else
+#										o.bLocked = true
+#
+#								if op.bLocked
+#									@log "HELP: already locked"
+#
+#						tran = fb.tran()
+#						tran.commit()
+#						.then =>
+#							ut.resolve()
+#						.catch (ex) =>
+#							@logCatch null, ex
+#							reject ex
 
-								if op.bLocked
-									@log "HELP: already locked"
 
-						tran = fb.tran()
-						tran.commit()
+	"Flexbase.UT":
+		meta:
+			bSingleton: true
+		version0:
+			NODE_SERVER_RPC:
+#				m:
+#					hello:
+#						concurrentAllowed: true
+#						fn: (a, b) ->
+#						parametersList: [
+#								a:
+#									type: "int"
+#									required: true
+#							,
+#								b:
+#									type: "int"
+#									required: false
+#						]
+				m:
+					hello: (a, b) ->
+						@log "hello from server: #{a}"
+			NODE_SERVER:
+				p:
+					color:
+						cn: "string"
+				ut: (@testHub) ->	#COL17
+					@a "initialize ut database", (ut) ->
+						@log "initialize ut database: #{@testHub.info}"
+						@testHub.tablesCreate()
 						.then =>
 							ut.resolve()
 						.catch (ex) =>
-							@logCatch null, ex
-							reject ex
-
-
-
+							ut.reject()
+			NODE_CLIENT:
+				p:
+					color:
+						cn: "string"
+#				ut: (@testHub) ->	#COL17
+#					@a "initialize ut database", (ut) ->
+#						@log "initialize ut database: #{@testHub.info}"
+#						@testHub.tablesCreate()
+#						.then =>
+#							ut.resolve()
+#						.catch (ex) =>
+#							ut.reject()
 
 
 
@@ -169,7 +365,7 @@ module.exports =
 #					enumValues: "RECORDED"
 #					required: true
 #			{RN|SERVER|WEB}_{ASYNC_LOCAL_SYNC}:
-			NODE_LOCAL:
+			NODE_CLIENT:
 				p:
 					activity:
 						cn: "Flexbase.Enum"
@@ -340,7 +536,7 @@ module.exports =
 
 	"SmileSpeak.Delivery":
 		version0:
-			NODE_LOCAL:
+			NODE_CLIENT:
 				p:
 					smileUserFromID:
 						cn: "int"		#TODO: "Flexbase.id"		Will be updated NEG_TO_POS
@@ -357,7 +553,7 @@ module.exports =
 
 	"SmileSpeak.Smile":
 		version0:
-			NODE_LOCAL:
+			NODE_CLIENT:
 				p:
 					smileUserFromID:
 						cn: "int"		#TODO: "Flexbase.id"		Will be updated NEG_TO_POS
@@ -398,7 +594,7 @@ module.exports =
 
 	"SmileSpeak.User":
 		version0:
-			NODE_LOCAL:
+			NODE_CLIENT:
 				p:
 					user:		#H
 						cn: "Flexbase.User"
@@ -456,7 +652,7 @@ module.exports =
 
 	"SmileSpeak.Friend":
 		version0:
-			NODE_LOCAL:
+			NODE_CLIENT:
 				p:
 					play: () ->	#H
 						obj =

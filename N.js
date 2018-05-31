@@ -3,11 +3,8 @@ var trace;
 
 trace = require('./trace');
 
+// PROJECT AGNOSTIC!!!
 module.exports = {
-  //VARIABLES
-  //	eD = document.documentElement
-
-  //INTERFACE
   //	ASCIIHEX: (n) ->
   //#if n <= -3 or n >= 18
   //#	throw n
@@ -19,6 +16,14 @@ module.exports = {
   //			C.A_I_TO_LC_ASCII_HEX[Math.round n]
   CONSTRAIN: function(min, n, max) {
     return Math.max(min, Math.min(n, max));
+  },
+  GUIDNew: function() { // uuidv4
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r, v;
+      r = Math.random() * 16 | 0;
+      v = c === 'x' ? r : r & 0x3 | 0x8;
+      return v.toString(16);
+    });
   },
   PLURAL: function(n) {
     if (n === 0 || n >= 2) {
@@ -41,18 +46,6 @@ module.exports = {
     }
     return Math.floor(Math.random() * (max - min + 1) + min);
   },
-  //	SCROLL_LEFT: (n) ->
-  //		if n?
-  //			eD.scrollLeft = n
-  //		else
-  //			(window.pageXOffset || eD.scrollLeft) - (eD.clientLeft || 0)
-
-  //	SCROLL_TOP: (n) ->
-  //		if n?
-  //			eD.scrollTop = n
-  //			return
-  //		else
-  //			return (window.pageYOffset || eD.scrollTop) - (eD.clientTop || 0)
   SIGN: function(n) {
     if (isNaN(n)) {
       return NAN;

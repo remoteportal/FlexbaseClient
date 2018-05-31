@@ -1,5 +1,7 @@
 ALL_TRISTATE = null
 
+UT_TEST_PRE_ONE_LINER___OVERRIDE_ON = 1
+
 TRACE_DUMP = 0
 
 
@@ -9,8 +11,18 @@ module.exports =
 	CONSTRUCTORS: 0
 	DETAIL: 0
 	NOISE: 0		#UNUSED
-	WARNINGS: 1
 
+	INTERNET: 0
+	
+	SOCKET_CONNECTED: 0
+	SOCKET_CLOSE: 0
+	SOCKET_LISTEN: 0
+	SOCKET_NOISE: 0
+	SOCKET_RECEIVED: 1
+	SOCKET_SENT: 1
+
+	WARNINGS: 1
+	SQL: 0
 
 
 
@@ -23,7 +35,7 @@ module.exports =
 
 
 	# Tests
-	TESTS: 0
+	TESTS: 0			#H #WTF
 
 
 	# UT
@@ -39,8 +51,6 @@ module.exports =
 	
 	#TODO: add name space
 	ID_TRANSLATE: 1
-	INTERNET: 1		#H
-	INTERNET_NOISE: 0		#H
 	PROPERTY_DELETE: 1
 	RESET: 1
 	SAVE_ID: 1
@@ -53,8 +63,13 @@ if ALL_TRISTATE?
 		module.exports[k] = ALL_TRISTATE
 
 
+if UT_TEST_PRE_ONE_LINER___OVERRIDE_ON
+	module.exports.UT_TEST_PRE_ONE_LINER = 1
+
+
 if TRACE_DUMP
 	for k, v of module.exports
 		console.log "#{k}: #{v}"
+
 
 return

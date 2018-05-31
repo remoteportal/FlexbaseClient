@@ -1,47 +1,84 @@
+###
+O - Object Functions					*** PROJECT AGNOSTIC ***
+
+
+WHAT: Node module
+
+
+DESCRIPTION
+
+
+
+FEATURES
+-
+
+
+NOTES
+-
+
+
+TODOs
+- LOG: pass explicit opts
+- LOG: maxDepth option
+- LOG: look at arguments.length to see if any passed parameters are undefined or null and PUT IN ALL CAPS!
+- LOG: Object.getOwnProperty to show hidden (non-enumerable) properties
+
+
+KNOWN BUGS:
+-
+###
+
+
+
+
+
+
 #if node
 trace = require './trace'
+#UT = require './UT'
 V = require './V'
 #endif
 
 
 
-#import logBase from './Log'
 
 
-if 0
-# probably long
-	o = Object.create null
-	o["1"]  = true
-	o["3"]  = true
-	o["5"]  = true
-
-	# probably short
-	a = [1, 2, 3, 4]
-
-	# iterate a, check o
-
-	# optimize: some objects are 'everyone'
-
-
-
-	o.$ = 3
-	o.$a = 33
-	o.$$ = 2
-
-	o.a = [1, 2, 3]
-	o.a.total = 100
-	l = o.a.length
+#MOVE: to pre-processor
+#H: what are the differences between these?
+#UT: UT-ize
+CNT = (o) ->
+	a = []
+	loop
+		a.push.apply a, Object.getOwnPropertyNames o
+		break unless o = Object.getPrototypeOf o
+	a.length
+CNT_OWN = (o) -> Object.getOwnPropertyNames(o).length
+CNT_ENUM = (o) ->
+	n = 0
+	n++ for k of o
+	n
+CNT_ENUM_OWN = (o) -> Object.keys(o).length
 
 
 
 
+KEYS = (o) ->
+	a = []
+	loop
+		a.push.apply a, Object.getOwnPropertyNames o
+		break unless o = Object.getPrototypeOf o
+	a
+KEYS_OWN = (o) -> Object.getOwnPropertyNames(o)
+KEYS_ENUM = (o) ->
+	a = []
+	a.push(k) for k of o
+	a
+KEYS_ENUM_OWN = (o) -> Object.keys(o)
 
 
-#IS=R.IS
 
 
 
-B = (o) -> o is true or o is 1 or o is "1" or o is "true"
 
 
 CLR_ENUM = (o) ->
@@ -89,189 +126,168 @@ DFS_BREAKABLE = (o, fn) ->								#REC
 	DFS_ o, 0
 
 
-#V.DUMP = (v) ->
-#	if Object::toString.call(v) is '[object String]'
-#		if v.length is 0
-#			"\"\""
-#		else
-#			v
-#	else if Object::toString.call(v) is '[object Number]'
-#		v
-#	else if Object::toString.call(v) is '[object Boolean]'
-#		v
-#	else if Object::toString.call(v) is '[object Function]'
-#		"FN"
-#	else
-#		"#{pv} <#{typeof pv}>"
-			
-DUMP = (o) ->
-	dump = (o, level) ->
-#		console.log "DDDDDDDDDDDDDD2: #{JSON.stringify o}"
-		for pn,pv of o
-			indent = "> ______________________________________________________________".substr(0, level+2)
-			try
-#				console.log "#{indent}#{pn}: #{pv} (#{typeof pv})"
-				if Array.isArray pv
-					if pv.length is 0
-						console.log "#{indent}#{pn}: []"
-					else
-						console.log "#{indent}#{pn}: ARRAY:"
-						for item,n in pv
-							if Object::toString.call(item) is '[object Object]'
-								console.log "#{indent}[#{n}]: AO"
-								dump pv, level+1
-							else
-								console.log "#{indent}_[#{n}]: #{V.DUMP pv}"
-				else
-					if Object::toString.call(pv) is '[object Object]'
-						cnt = CNT_OWN pv
-						if cnt
-							console.log "#{indent}#{pn}: OBJ (#{cnt})"
-							dump pv, level+1
-						else
-							console.log "#{indent}#{pn}: OBJ EMPTY"
-					else
-						console.log "#{indent}#{pn}: #{V.DUMP pv}"
-#				console.log "#{indent}#{pn} (#{typeof pv})"
-	#			console.log "#{pn}"
-			catch ex
-				console.log "#{indent}#{pn}: ***ERR*** #{ex}"
-		return
-	dump o, 0
-	return
-	# console.log "OOOOOOOOOOOOOOOOO"
 	
-#DUMP = (o, bRecursive=true, stringTruncateCnt=65535, levelNbr=0, bTerm=true, maxDepth=16, bMarkup=true) ->
-#	indent = ->
-#		if bMarkup
-#			R.N.PERIOD levelNbr*10
-#		else
-#			""
+LOGIgnore = {}
+duck = (o) ->
+	switch
+		when o.hasOwnProperty "__cn"
+			"Flexbase object"
+		when o.hasOwnProperty "__CLASS_NAME"
+			o.__CLASS_NAME
+		else
+			"OBJ"
+
+
+#TODO: flag 'undefined' unless opt set
+LOG = (o) ->
+	DEBUG = 0
+	#	iter = 0
+	#	MAX_ITER = 100
+	MAX_DEPTH = 15
+	MAX_PROPERTY_DEPTH = 5
+
+	if DEBUG
+		console.log "\n\n\n\n\n\n\n\n\n\n"
+		console.log "O.LOG:"
+		console.log JSON.stringify o
+		console.log "O.LOG: o=#{o} ARRAY=#{Array.isArray o} TYPEOF=#{typeof o}) TYPE=#{Object::toString.call o} JSON=#{JSON.stringify o}"
+		console.log "==============================================="
+
+	Q = ">  "
+
+	propertyHitsMap = Object.create null
+
+	bRecurse = true
+
+	log = (p, v, depth) ->
+		#TODO: use V.TYPE
+		type = Object::toString.call v
+		
+#		console.log "DEBUG: #{p}=#{v} ARRAY=#{Array.isArray v} TYPEOF=#{typeof v} TYPE2=#{type} JSON=#{JSON.stringify v}"
+
+		#TODO: pass p as parameter
+		indent = (s) -> console.log "#{Q}#{" ".repeat depth * 8}#{if depth > 0 then " ∟ " else ""}#{if p.length > 0 then "#{p}:" else ""} #{s}"
+
+		if depth is MAX_DEPTH
+			indent "MAX_DEPTH (#{MAX_DEPTH}) exceeded"
+			bRecurse = false
+			return
+
+		if Array.isArray v
+			if v.length is 0
+				indent "[]"
+			else
+				indent "ARRAY (len=#{v.length}):"
+
+				for item,n in v
+					log "#{if p.length > 0 and p[0] isnt '[' then "" else ""}[#{n}]", item, depth+1
+		else if v instanceof Error
+			indent "details:"
+			a = Object.getOwnPropertyNames v
+			for pn in a
+				log pn, v[pn], depth+1
+		else if type is '[object Arguments]'
+			indent "found arguments (length=#{v.length})"
+			for arg,i in v
+#				indent "arguments[#{i}] = #{arg}"
+
+#				indent "arguments[#{i}] ===================="
+#				LOG arg
+
+				log "arguments[#{i}]", arg, depth+1
+		else if type is '[object Object]'
+			if cnt = CNT_OWN v
+				try
+					indent "#{duck v} (#{cnt})"
+				catch ex
+					indent "duck exception (#{cnt})"
+
+#				for p of v
+#					console.log "of: p=#{p}"
 #
-#	if bTerm
-##BR = "_#{maxDepth}<br>"
-##BR = "$<br>"
-#		BR = "<br>"
-#	else
-#		BR = " "
-#
-#	LLL = if bMarkup
-#		R.L
-#	else
-#		ACTION: (s) -> s
-#		CLS: (s) -> s
-#		ERR: (s) -> s
-#		EV: (s) -> s
-#		RANGE: (s) -> s
-#		TAG: (s) -> s
-#		TR: (s) -> s
-#		CELL_TYPESTYPE: (s) -> s
-#
-##	REC = (o, bTerm) ->
-##		if levelNbr < maxDepth	#HACK
-##		DUMP o, bRecursive, stringTruncateCnt, levelNbr+1, bTerm, maxDepth, bMarkup
-##		else
-##		BR
-#
-#	callREC = (o) ->
-#		if !o? or IS.PRIM(o) or (Array.isArray(o) and (o.length is 0 or (o.length is 1 and IS.PRIM o[0]))) or (IS.O(o) and CNT_ENUM_OWN(o) is 1 and IS.PRIM(o[Object.keys(o)[0]]))
-#			if levelNbr < maxDepth
-#				REC o, bTerm							#REC repeats this logic...
-#			else
-#				"#{o}#{BR}"
-#		else
-#			"#{BR}#{REC o, true}"
-#
-#	if o?
-#		if Array.isArray o
-#			if o.length is 0
-#				"[]" + BR
-#			else if o.length is 1 and typeof o[0] isnt "object"
-#				"[#{REC o[0], false}]" + BR
-#			else
-#				s = ""
-#				s += BR + "#{indent()}[" + BR
-#				for item,j in o
-#					s += "#{indent()}#{LLL.CLS "#{j}/#{o.length-1}"}"
-#					s += callREC item
-#				s + "#{indent()}]" + BR
-#		else
-#			switch typeof o
-#				when "symbol"
-#					LLL.TYPE("#{o} symbol") + BR
-#				when "boolean"
-#					"#{LLL.EV o}" + BR
-#				when "number"
-#					"#{LLL.TAG o}" + BR
-#				when "string"
-#					"\"#{LLL.RANGE(R.S.TRUNC o, stringTruncateCnt)}\"#{if bMarkup then "<span class='l-str-len'>#{o.length}</span>" else ""}" + BR
-#				when "function"
-#					"#{LLL.TR o}" + BR
-#				when "object"
-#					try
-#						s = ""
-#						for own k,v of o
-#							s += "#{indent()}#{LLL.ACTION k}:"
-#							s += callREC v
-#						s
-#					catch eo
-#						"UNABLE TO ITERATE OBJECT PROPERTIES: #{eo}"
-#				else
-#					throw "type \"#{typeof o}\""
-#	else if o is undefined
-#		LLL.TYPE("undefined") + BR
-#	else
-#		LLL.ERR("null") + BR
+#				#NOTE: "including non-enumerable properties except for those which use Symbol"
+#				for p in Object.getOwnPropertyNames v
+#					console.log "Object.getOwnPropertyNames: p=#{p}"
+
+				#TODO: identify non-enumerable properties just because!
+
+				a = Object.keys v
+
+				a.sort()
+
+				for p in a
+					if propertyHitsMap[p]?
+						if ++propertyHitsMap[p] is MAX_PROPERTY_DEPTH
+							indent "########## property '#{p}' has occurred too many times.  Stopped at #{MAX_PROPERTY_DEPTH}.  Circular structure?"
+							bRecurse = false
+					else
+						propertyHitsMap[p] = 1
+
+					if bRecurse
+						if LOGIgnore[p]
+							log p, "**LogIgnore**", depth+1
+						else
+							log p, v[p], depth+1
+			else
+				indent "OBJ EMPTY"
+		else
+			indent V.DUMP v
+
+
+	if arguments.length is 0
+		console.log "WARNING: LOG wasn't passed anything"
+	else if arguments.length is 1
+		log "", o, 0
+	else
+		if true
+			objectFoundNbr = 0
+			for v,i in arguments
+				unless v?
+					console.log "#{Q}LOGARG[#{i}]: UNDEFINED"
+				else if Object::toString.call(v) is '[object String]'
+	#				console.log "#{v}"	# echo plain strings out directly as we find them
+					console.log "#{Q}LOGARG[#{i}]: #{V.DUMP v}"
+				else
+	#				log "#{["1st","2nd","3rd","4th","5th","6th","7th","8th","9th","next","next","next"][objectFoundNbr++]} OBJ PASSED", v, 0
+					log "LOGARG[#{i}]:", v, 0
+		else
+			#TODO: put on a same line
+			objectFoundNbr = 0
+			for v,i in arguments
+				unless v?
+					console.log "#{Q}LOGARG[#{i}]: UNDEFINED"
+				else if Object::toString.call(v) is '[object String]'
+	#				console.log "#{v}"	# echo plain strings out directly as we find them
+					console.log "#{Q}LOGARG[#{i}]: #{V.DUMP v}"
+				else
+	#				log "#{["1st","2nd","3rd","4th","5th","6th","7th","8th","9th","next","next","next"][objectFoundNbr++]} OBJ PASSED", v, 0
+					log "LOGARG[#{i}]:", v, 0
+
+	if DEBUG
+		console.log "\n\n\n\n\n\n\n\n\n\n"
+
+	return
 
 
 
 
 
+stringifySafe = (o) ->
+	if o isnt null and typeof o is 'object'
+		s = ""
 
-#MOVE: to pre-processor
-#H: what are the differences between these?
-#UT: UT-ize
-CNT = (o) ->
-	a = []
-	loop
-		a.push.apply a, Object.getOwnPropertyNames o
-		break unless o = Object.getPrototypeOf o
-	a.length
-CNT_OWN = (o) -> Object.getOwnPropertyNames(o).length
-CNT_ENUM = (o) ->
-	n = 0
-	n++ for k of o
-	n
-CNT_ENUM_OWN = (o) -> Object.keys(o).length
+		for pn of o
+			s += "#{pn}=${o[pn]} "
+
+		s
+	else
+		o
 
 
-
-
-KEYS = (o) ->
-	a = []
-	loop
-		a.push.apply a, Object.getOwnPropertyNames o
-		break unless o = Object.getPrototypeOf o
-	a
-KEYS_OWN = (o) -> Object.getOwnPropertyNames(o)
-KEYS_ENUM = (o) ->
-	a = []
-	a.push(k) for k of o
-	a
-KEYS_ENUM_OWN = (o) -> Object.keys(o)
-
-
-
-
+		
 
 
 module.exports =
-#	B:B
-#	CHILD_ELEVATE: (o, pn) ->
-#		if o[pn]
-#			@EXT_RVTMX o, o[pn]
-#			delete o[pn]
-#		o
 #	CLR_ENUM:CLR_ENUM
 #	A_CLR_ENUM:A_CLR_ENUM
 #	CONTAINS_INSENSITIVE:CONTAINS_INSENSITIVE
@@ -285,7 +301,7 @@ module.exports =
 #		for pn in KEYS a
 #			o[pn] = b[pn] if pn !of b
 #		o
-	DUMP:DUMP
+
 
 
 
@@ -460,6 +476,8 @@ module.exports =
 	CNT_ENUM:CNT_ENUM
 	CNT_ENUM_OWN:CNT_ENUM_OWN
 
+	duck: duck
+
 	INTERSECTS_ENUM: (o0, o1) ->
 		for k of o0
 			return true if k of o1
@@ -469,6 +487,10 @@ module.exports =
 	KEYS_OWN:KEYS_OWN
 	KEYS_ENUM:KEYS_ENUM
 	KEYS_ENUM_OWN:KEYS_ENUM_OWN
+
+	LOG: LOG
+	LOGIgnore: LOGIgnore
+
 #
 #	N: (o) ->
 #		if typeof o is "number"
@@ -482,3 +504,23 @@ module.exports =
 #			return false unless sup[k]?
 #			return false unless R.O.EQUALS sub[k], sup[k]
 #		true
+
+
+
+	UTRun: ->
+		@log "O.UTRun"
+#if ut
+		new O_UT().run()
+#endif
+
+
+
+
+
+
+
+
+#class O_UT extends UT
+#	run: ->
+#		@T "LOG", ->
+#			@log "pre"
